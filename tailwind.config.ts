@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -52,6 +53,26 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				wonderlearn: {
+					50: '#f0f7ff',
+					100: '#e0effe',
+					200: '#bae2fd',
+					300: '#7ccefc',
+					400: '#36b9f8',
+					500: '#0ca2eb',
+					600: '#0080cb',
+					700: '#0066a5',
+					800: '#065688',
+					900: '#0b4871',
+					950: '#082e4a',
+				},
+				wl: {
+					blue: '#0ca2eb',
+					purple: '#6c63ff',
+					green: '#4caf50',
+					yellow: '#ffd54f',
+					red: '#ff5252',
+				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
@@ -84,11 +105,33 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'fade-in': {
+					'0%': { opacity: '0', transform: 'translateY(10px)' },
+					'100%': { opacity: '1', transform: 'translateY(0)' }
+				},
+				'fade-out': {
+					'0%': { opacity: '1', transform: 'translateY(0)' },
+					'100%': { opacity: '0', transform: 'translateY(10px)' }
+				},
+				'scale-in': {
+					'0%': { transform: 'scale(0.95)', opacity: '0' },
+					'100%': { transform: 'scale(1)', opacity: '1' }
+				},
+				'hero-zoom': {
+					'0%': { transform: 'scale(1.0)' },
+					'100%': { transform: 'scale(1.05)' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'fade-in': 'fade-in 0.5s ease-out forwards',
+				'scale-in': 'scale-in 0.3s ease-out forwards',
+				'hero-zoom': 'hero-zoom 10s ease-out infinite alternate'
+			},
+			fontFamily: {
+				nunito: ['Nunito', 'sans-serif'],
 			}
 		}
 	},
