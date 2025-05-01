@@ -1,10 +1,14 @@
-
 import React, { useEffect, useRef } from 'react';
 import Navigation from '@/components/layout/Navigation';
 import Footer from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { CheckCircle, Target, TrendingUp, Lock, ArrowRight } from 'lucide-react';
+
+// Define interface for elements with delay CSS variable
+interface DelayStyleProps {
+  '--delay': number;
+}
 
 const Home = () => {
   // Function to handle intersection observer for scroll animations
@@ -151,7 +155,10 @@ const Home = () => {
               </div>
             </div>
 
-            <div className="scroll-animation relative flex flex-col items-center text-center p-6" style={{"--delay": 1} as React.CSSProperties}>
+            <div 
+              className="scroll-animation relative flex flex-col items-center text-center p-6" 
+              style={{ '--delay': 1 } as React.CSSProperties}
+            >
               <div className="absolute -top-10 text-6xl font-bold text-gray-100">2</div>
               <div className="bg-white p-6 rounded-xl shadow-md w-full">
                 <img 
@@ -166,7 +173,10 @@ const Home = () => {
               </div>
             </div>
 
-            <div className="scroll-animation relative flex flex-col items-center text-center p-6" style={{"--delay": 2} as React.CSSProperties}>
+            <div 
+              className="scroll-animation relative flex flex-col items-center text-center p-6" 
+              style={{ '--delay': 2 } as React.CSSProperties}
+            >
               <div className="absolute -top-10 text-6xl font-bold text-gray-100">3</div>
               <div className="bg-white p-6 rounded-xl shadow-md w-full">
                 <img 
@@ -220,7 +230,10 @@ const Home = () => {
               </div>
             </div>
 
-            <div className="scroll-animation bg-purple-50 p-6 rounded-xl" style={{"--delay": 1} as React.CSSProperties}>
+            <div 
+              className="scroll-animation bg-purple-50 p-6 rounded-xl" 
+              style={{ '--delay': 1 } as React.CSSProperties}
+            >
               <div className="flex items-center mb-4 text-yellow-400">
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
@@ -240,80 +253,12 @@ const Home = () => {
               </div>
             </div>
 
-            <div className="scroll-animation bg-green-50 p-6 rounded-xl" style={{"--delay": 2} as React.CSSProperties}>
+            <div 
+              className="scroll-animation bg-green-50 p-6 rounded-xl" 
+              style={{ '--delay': 2 } as React.CSSProperties}
+            >
               <div className="flex items-center mb-4 text-yellow-400">
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-              </div>
-              <p className="text-gray-700 mb-4">
-                "The ICAS practice tests helped me score a distinction in science! I love how the platform explains why answers are right or wrong. It helped me understand concepts better."
-              </p>
-              <div className="flex items-center">
-                <div className="h-10 w-10 rounded-full bg-green-200 flex items-center justify-center text-green-600 font-bold">J</div>
-                <div className="ml-3">
-                  <p className="font-semibold">James L.</p>
-                  <p className="text-sm text-gray-600">Year 9 Student</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Trust Section */}
-      <section className="py-12 bg-gray-50">
-        <div className="container text-center">
-          <p className="text-lg font-medium text-gray-600 mb-8">
-            Trusted by over 10,000 Australian students
-          </p>
-          <div className="flex flex-wrap justify-center gap-8 opacity-70">
-            <div className="w-32 h-12 bg-gray-300 rounded flex items-center justify-center">
-              <span className="font-bold text-gray-600">School 1</span>
-            </div>
-            <div className="w-32 h-12 bg-gray-300 rounded flex items-center justify-center">
-              <span className="font-bold text-gray-600">School 2</span>
-            </div>
-            <div className="w-32 h-12 bg-gray-300 rounded flex items-center justify-center">
-              <span className="font-bold text-gray-600">School 3</span>
-            </div>
-            <div className="w-32 h-12 bg-gray-300 rounded flex items-center justify-center">
-              <span className="font-bold text-gray-600">School 4</span>
-            </div>
-            <div className="w-32 h-12 bg-gray-300 rounded flex items-center justify-center">
-              <span className="font-bold text-gray-600">School 5</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-16 bg-gradient-to-r from-wl-blue to-wl-purple text-white">
-        <div className="container text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to Excel in Your Exams?</h2>
-          <p className="text-xl mb-8 max-w-2xl mx-auto">
-            Join thousands of Australian students who are mastering NAPLAN and ICAS with WonderLearn.
-          </p>
-          <div className="flex flex-wrap justify-center gap-4">
-            <Link to="/signup">
-              <Button size="lg" variant="secondary" className="text-lg px-8 py-6 bg-white text-wl-blue hover:bg-gray-100">
-                Sign Up Free
-              </Button>
-            </Link>
-            <Link to="/exams">
-              <Button size="lg" variant="outline" className="text-lg px-8 py-6 border-white text-white hover:bg-white/10">
-                Explore Exams
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <Footer />
-    </div>
-  );
-};
-
-export default Home;
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.2
