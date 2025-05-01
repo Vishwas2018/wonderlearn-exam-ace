@@ -173,7 +173,7 @@ const Exams = () => {
                         <SelectValue placeholder="Exam Type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All Exam Types</SelectItem>
+                        <SelectItem value="all-exam-types">All Exam Types</SelectItem>
                         <SelectItem value="NAPLAN">NAPLAN</SelectItem>
                         <SelectItem value="ICAS">ICAS</SelectItem>
                         <SelectItem value="ICAS All Stars">ICAS All Stars</SelectItem>
@@ -190,7 +190,7 @@ const Exams = () => {
                         <SelectValue placeholder="Year Level" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All Year Levels</SelectItem>
+                        <SelectItem value="all-year-levels">All Year Levels</SelectItem>
                         <SelectItem value="2">Year 2</SelectItem>
                         <SelectItem value="3">Year 3</SelectItem>
                         <SelectItem value="4">Year 4</SelectItem>
@@ -212,7 +212,7 @@ const Exams = () => {
                         <SelectValue placeholder="Subject" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All Subjects</SelectItem>
+                        <SelectItem value="all-subjects">All Subjects</SelectItem>
                         <SelectItem value="Maths">Maths</SelectItem>
                         <SelectItem value="Science">Science</SelectItem>
                         <SelectItem value="Digital Technologies">Digital Technologies</SelectItem>
