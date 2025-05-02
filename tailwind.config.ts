@@ -53,25 +53,18 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
-				wonderlearn: {
-					50: '#f0f7ff',
-					100: '#e0effe',
-					200: '#bae2fd',
-					300: '#7ccefc',
-					400: '#36b9f8',
-					500: '#0ca2eb',
-					600: '#0080cb',
-					700: '#0066a5',
-					800: '#065688',
-					900: '#0b4871',
-					950: '#082e4a',
-				},
-				wl: {
-					blue: '#0ca2eb',
-					purple: '#6c63ff',
-					green: '#4caf50',
-					yellow: '#ffd54f',
-					red: '#ff5252',
+				elevatEd: {
+					50: '#fff1e6',
+					100: '#ffe5d3',
+					200: '#ffcba6',
+					300: '#ffab70',
+					400: '#ff8247',
+					500: '#f76220',
+					600: '#e04712',
+					700: '#b9320e',
+					800: '#962912',
+					900: '#7c2411',
+					950: '#431008',
 				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
@@ -132,6 +125,9 @@ export default {
 			},
 			fontFamily: {
 				nunito: ['Nunito', 'sans-serif'],
+			},
+			backgroundImage: {
+				'warm-gradient': 'linear-gradient(to bottom, rgba(255,207,139,0.50) 0%, rgba(255,207,139,0.2) 100%)',
 			}
 		}
 	},
