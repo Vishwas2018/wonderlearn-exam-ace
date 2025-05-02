@@ -13,77 +13,8 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { ArrowRight, BookOpen, Lock } from 'lucide-react';
-
-// Mock exam data
-const mockExams = [
-  {
-    id: 'naplan-y3-maths-1',
-    title: 'NAPLAN Practice Exam 1',
-    subject: 'Maths',
-    yearLevel: '3',
-    type: 'NAPLAN',
-    description: 'Practice with authentic NAPLAN-style mathematics questions for Year 3 students.',
-    questions: 30,
-    duration: 45,
-    isFree: true,
-  },
-  {
-    id: 'naplan-y3-science-1',
-    title: 'NAPLAN Practice Exam 1',
-    subject: 'Science',
-    yearLevel: '3',
-    type: 'NAPLAN',
-    description: 'Science knowledge and concepts assessment aligned with NAPLAN expectations.',
-    questions: 25,
-    duration: 40,
-    isFree: false,
-  },
-  {
-    id: 'naplan-y3-digital-1',
-    title: 'NAPLAN Practice Exam 1',
-    subject: 'Digital Technologies',
-    yearLevel: '3',
-    type: 'NAPLAN',
-    description: 'Digital literacy and reasoning questions for Year 3 students.',
-    questions: 20,
-    duration: 35,
-    isFree: false,
-  },
-  {
-    id: 'icas-y3-maths-1',
-    title: 'ICAS Practice Exam 1',
-    subject: 'Maths',
-    yearLevel: '3',
-    type: 'ICAS',
-    description: 'Comprehensive mathematics practice test matching ICAS structure and difficulty.',
-    questions: 35,
-    duration: 50,
-    isFree: true,
-  },
-  {
-    id: 'icas-y3-science-1',
-    title: 'ICAS Practice Exam 1',
-    subject: 'Science',
-    yearLevel: '3',
-    type: 'ICAS',
-    description: 'Science reasoning and knowledge assessment in ICAS format.',
-    questions: 30,
-    duration: 45,
-    isFree: false,
-  },
-  {
-    id: 'naplan-y4-maths-1',
-    title: 'NAPLAN Practice Exam 1',
-    subject: 'Maths',
-    yearLevel: '4',
-    type: 'NAPLAN',
-    description: 'Math practice questions for Year 4 students preparing for NAPLAN.',
-    questions: 35,
-    duration: 50,
-    isFree: true,
-  },
-];
+import { ArrowRight, BookOpen, Lock, Filter, ChevronDown } from 'lucide-react';
+import exams from '@/data/exams';
 
 // Study tips by subject
 const studyTips: Record<string, string[]> = {
@@ -114,12 +45,12 @@ const Exams = () => {
     yearLevel: '',
     subject: '',
   });
-  const [filteredExams, setFilteredExams] = useState(mockExams);
+  const [filteredExams, setFilteredExams] = useState(exams);
   const [isSubscribed, setIsSubscribed] = useState(false); // Mock subscription status
 
   // Filter exams based on selected filters
   useEffect(() => {
-    let result = mockExams;
+    let result = exams;
     
     if (filters.examType) {
       result = result.filter(exam => exam.type === filters.examType);
@@ -136,7 +67,7 @@ const Exams = () => {
     setFilteredExams(result);
   }, [filters]);
 
-  const handleStartExam = (exam: typeof mockExams[0]) => {
+  const handleStartExam = (exam) => {
     if (!exam.isFree && !isSubscribed) {
       toast.error("This is a premium exam. Please subscribe to access all exams.");
       return;
@@ -173,7 +104,7 @@ const Exams = () => {
                         <SelectValue placeholder="Exam Type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all-exam-types">All Exam Types</SelectItem>
+                        <SelectItem value="all-types">All Exam Types</SelectItem>
                         <SelectItem value="NAPLAN">NAPLAN</SelectItem>
                         <SelectItem value="ICAS">ICAS</SelectItem>
                         <SelectItem value="ICAS All Stars">ICAS All Stars</SelectItem>
@@ -190,7 +121,7 @@ const Exams = () => {
                         <SelectValue placeholder="Year Level" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all-year-levels">All Year Levels</SelectItem>
+                        <SelectItem value="all-years">All Year Levels</SelectItem>
                         <SelectItem value="2">Year 2</SelectItem>
                         <SelectItem value="3">Year 3</SelectItem>
                         <SelectItem value="4">Year 4</SelectItem>
@@ -225,8 +156,11 @@ const Exams = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredExams.length > 0 ? (
                     filteredExams.map((exam) => (
-                      <Card key={exam.id} className="overflow-hidden hover:shadow-md transition-shadow hover-scale">
-                        <CardHeader className={`${exam.type === 'NAPLAN' ? 'bg-blue-50' : 'bg-purple-50'} py-4`}>
+                      <Card 
+                        key={exam.id} 
+                        className="overflow-hidden hover:shadow-md transition-all duration-300 hover:scale-[1.02]"
+                      >
+                        <CardHeader className={`${exam.type === 'NAPLAN' ? 'bg-blue-50' : exam.type === 'ICAS All Stars' ? 'bg-amber-50' : 'bg-purple-50'} py-4`}>
                           <div className="flex justify-between items-center">
                             <div>
                               <CardTitle className="text-lg">{exam.title}</CardTitle>
@@ -235,7 +169,9 @@ const Exams = () => {
                               </CardDescription>
                             </div>
                             <div className={`rounded-full text-xs font-medium px-2 py-1 ${
-                              exam.type === 'NAPLAN' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
+                              exam.type === 'NAPLAN' ? 'bg-blue-100 text-blue-800' : 
+                              exam.type === 'ICAS All Stars' ? 'bg-amber-100 text-amber-800' : 
+                              'bg-purple-100 text-purple-800'
                             }`}>
                               {exam.type}
                             </div>
@@ -244,7 +180,7 @@ const Exams = () => {
                         <CardContent className="py-4">
                           <p className="text-sm text-gray-600 mb-4">{exam.description}</p>
                           <div className="flex justify-between text-sm text-gray-500">
-                            <span>{exam.questions} questions</span>
+                            <span>{exam.questions?.length || 0} questions</span>
                             <span>{exam.duration} minutes</span>
                           </div>
                         </CardContent>
@@ -287,17 +223,17 @@ const Exams = () => {
             <div className="md:w-1/4">
               {/* Study Tips */}
               {filters.subject && studyTips[filters.subject] ? (
-                <div className="bg-white p-6 rounded-lg shadow-sm mb-6 animate-fade-in">
-                  <h2 className="text-lg font-bold mb-4 flex items-center">
+                <div className="bg-white p-6 rounded-lg shadow-sm mb-6 animate-fade-in border-l-4 border-amber-400">
+                  <h2 className="text-lg font-bold mb-4 flex items-center text-amber-700">
                     <svg className="w-5 h-5 mr-2 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                     </svg>
                     Study Tips: {filters.subject}
                   </h2>
-                  <ul className="space-y-2 text-sm">
+                  <ul className="space-y-3 text-sm">
                     {studyTips[filters.subject].map((tip, index) => (
-                      <li key={index} className="flex items-start">
-                        <span className="text-wl-green mr-2">•</span>
+                      <li key={index} className="flex items-start p-2 hover:bg-amber-50 rounded-md transition-colors">
+                        <span className="text-amber-500 mr-2 font-bold">•</span>
                         <span>{tip}</span>
                       </li>
                     ))}
@@ -307,14 +243,14 @@ const Exams = () => {
               
               {/* Subscription Card */}
               {!isSubscribed && (
-                <div className="bg-gradient-to-br from-wl-blue to-wl-purple p-6 rounded-lg shadow-sm text-white">
+                <div className="bg-gradient-to-br from-blue-600 to-purple-600 p-6 rounded-lg shadow-sm text-white">
                   <h2 className="text-lg font-bold mb-2">Unlock All Exams</h2>
                   <p className="text-sm mb-4 text-white/90">
                     Subscribe today to access our complete library of practice exams for all subjects and year levels.
                   </p>
                   <Button 
                     variant="secondary"
-                    className="w-full bg-white hover:bg-gray-100 text-wl-blue"
+                    className="w-full bg-white hover:bg-gray-100 text-blue-600"
                     onClick={handleSubscribe}
                   >
                     View Pricing <ArrowRight size={16} className="ml-2" />
