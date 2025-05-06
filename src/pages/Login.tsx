@@ -8,16 +8,17 @@ import { Checkbox } from '@/components/ui/checkbox';
 import Navigation from '@/components/layout/Navigation';
 import Footer from '@/components/layout/Footer';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Login = () => {
   const navigate = useNavigate();
+  const { login, isLoading } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     rememberMe: false,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -48,7 +49,7 @@ const Login = () => {
     return newErrors;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     const validationErrors = validate();
@@ -57,36 +58,35 @@ const Login = () => {
       return;
     }
     
-    setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      await login(formData.email, formData.password);
       toast.success("Logged in successfully!");
       navigate('/exams');
-    }, 1500);
+    } catch (error) {
+      toast.error("Login failed. Please check your credentials.");
+    }
   };
 
-  const handleGoogleLogin = () => {
-    setIsLoading(true);
-    
-    // Simulate OAuth
-    setTimeout(() => {
-      setIsLoading(false);
+  const handleGoogleLogin = async () => {
+    try {
+      // This would be replaced with actual Google OAuth
+      await login("google.user@example.com", "google-oauth");
       toast.success("Logged in with Google successfully!");
       navigate('/exams');
-    }, 1500);
+    } catch (error) {
+      toast.error("Google login failed.");
+    }
   };
 
-  const handleMicrosoftLogin = () => {
-    setIsLoading(true);
-    
-    // Simulate OAuth
-    setTimeout(() => {
-      setIsLoading(false);
+  const handleMicrosoftLogin = async () => {
+    try {
+      // This would be replaced with actual Microsoft OAuth
+      await login("microsoft.user@example.com", "microsoft-oauth");
       toast.success("Logged in with Microsoft successfully!");
       navigate('/exams');
-    }, 1500);
+    } catch (error) {
+      toast.error("Microsoft login failed.");
+    }
   };
 
   return (
@@ -158,7 +158,7 @@ const Login = () => {
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <Label htmlFor="password">Password</Label>
-                <Link to="/forgot-password" className="text-xs text-wl-blue hover:underline">
+                <Link to="/forgot-password" className="text-xs text-primary hover:underline">
                   Forgot password?
                 </Link>
               </div>
@@ -197,7 +197,7 @@ const Login = () => {
             
             <p className="text-center text-sm text-gray-600 mt-4">
               Don't have an account?{' '}
-              <Link to="/signup" className="text-wl-blue hover:underline">
+              <Link to="/signup" className="text-primary hover:underline">
                 Sign up
               </Link>
             </p>

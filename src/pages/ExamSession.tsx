@@ -16,6 +16,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
+import { Flag, Clock, AlertTriangle, X } from 'lucide-react';
 
 // Mock exam data - this would come from an API in a real app
 const getMockExam = (examId: string) => {
@@ -101,6 +103,7 @@ interface FlaggedQuestion {
 const ExamSession = () => {
   const { examId } = useParams();
   const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuth();
   const [exam, setExam] = useState<any>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Answer>({});
@@ -109,10 +112,22 @@ const ExamSession = () => {
   const [showStartDialog, setShowStartDialog] = useState(true);
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
   const [showTimeWarning, setShowTimeWarning] = useState(false);
+  const [showFocusWarning, setShowFocusWarning] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const warningShownRef = useRef(false);
   const finalWarningShownRef = useRef(false);
   const tabSwitchCountRef = useRef(0);
+  const mouseLeavesScreenCountRef = useRef(0);
+  const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastActivityRef = useRef(Date.now());
+
+  // Check authentication
+  useEffect(() => {
+    if (!isAuthenticated && !showStartDialog) {
+      toast.error("You must be logged in to take an exam");
+      navigate('/login');
+    }
+  }, [isAuthenticated, showStartDialog, navigate]);
 
   // Load exam data
   useEffect(() => {
@@ -159,16 +174,14 @@ const ExamSession = () => {
     }
   }, [showStartDialog]);
   
-  // Tab visibility change detection
+  // Enhanced anti-cheating: Tab visibility change detection
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden' && !showStartDialog && timeLeft > 0) {
         tabSwitchCountRef.current += 1;
         
         if (tabSwitchCountRef.current === 1) {
-          toast.warning("Please stay on this tab. Switching tabs may result in automatic exam submission.", {
-            duration: 5000,
-          });
+          setShowFocusWarning(true);
         }
         
         if (tabSwitchCountRef.current >= 3) {
@@ -187,6 +200,65 @@ const ExamSession = () => {
     };
   }, [showStartDialog, timeLeft]);
 
+  // Enhanced anti-cheating: Mouse leave detection
+  useEffect(() => {
+    const handleMouseLeave = (e: MouseEvent) => {
+      if (!showStartDialog && timeLeft > 0) {
+        // Check if mouse leaves the browser window
+        if (e.clientY <= 0 || e.clientX <= 0 || e.clientX >= window.innerWidth || e.clientY >= window.innerHeight) {
+          mouseLeavesScreenCountRef.current += 1;
+          
+          if (mouseLeavesScreenCountRef.current === 2) {
+            toast.warning("Please keep your mouse within the exam window", { duration: 3000 });
+          }
+          
+          if (mouseLeavesScreenCountRef.current >= 4) {
+            toast.error("Multiple attempts to leave the screen detected. This activity is logged.", { duration: 5000 });
+          }
+        }
+      }
+    };
+    
+    document.addEventListener('mouseleave', handleMouseLeave);
+    
+    return () => {
+      document.removeEventListener('mouseleave', handleMouseLeave);
+    };
+  }, [showStartDialog, timeLeft]);
+
+  // Enhanced anti-cheating: Inactivity detection
+  useEffect(() => {
+    const resetInactivityTimer = () => {
+      lastActivityRef.current = Date.now();
+    };
+    
+    const checkInactivity = () => {
+      if (!showStartDialog && timeLeft > 0) {
+        const inactiveTime = Date.now() - lastActivityRef.current;
+        // If inactive for more than 2 minutes
+        if (inactiveTime > 2 * 60 * 1000) {
+          toast.warning("Are you still there? Please continue with the exam.", { duration: 5000 });
+        }
+      }
+    };
+    
+    // User activity events
+    const activityEvents = ['mousedown', 'keydown', 'touchstart', 'mousemove'];
+    activityEvents.forEach(event => {
+      document.addEventListener(event, resetInactivityTimer);
+    });
+    
+    // Check inactivity every 30 seconds
+    inactivityTimerRef.current = setInterval(checkInactivity, 30000);
+    
+    return () => {
+      activityEvents.forEach(event => {
+        document.removeEventListener(event, resetInactivityTimer);
+      });
+      if (inactivityTimerRef.current) clearInterval(inactivityTimerRef.current);
+    };
+  }, [showStartDialog, timeLeft]);
+
   const handleTimeUp = () => {
     toast.error("Time's up! Your exam is being submitted.", {
       duration: 5000,
@@ -201,6 +273,14 @@ const ExamSession = () => {
   };
 
   const handleStartExam = () => {
+    // Verify premium access if needed
+    const currentExam = exam;
+    if (!currentExam.isFree && (!isAuthenticated || !user?.isSubscribed)) {
+      toast.error("This is a premium exam. Please subscribe to access all premium exams.");
+      navigate('/pricing');
+      return;
+    }
+    
     setShowStartDialog(false);
   };
 
@@ -209,6 +289,9 @@ const ExamSession = () => {
       ...prev,
       [questionId]: answer
     }));
+    
+    // Reset user activity timestamp
+    lastActivityRef.current = Date.now();
   };
 
   const handleFlag = (questionId: string) => {
@@ -216,18 +299,27 @@ const ExamSession = () => {
       ...prev,
       [questionId]: !prev[questionId]
     }));
+    
+    // Reset user activity timestamp
+    lastActivityRef.current = Date.now();
   };
 
   const handleNext = () => {
     if (currentQuestionIndex < exam.questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
     }
+    
+    // Reset user activity timestamp
+    lastActivityRef.current = Date.now();
   };
 
   const handlePrevious = () => {
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(currentQuestionIndex - 1);
     }
+    
+    // Reset user activity timestamp
+    lastActivityRef.current = Date.now();
   };
 
   const handleSubmitClick = () => {
@@ -243,6 +335,9 @@ const ExamSession = () => {
     } else {
       handleSubmit();
     }
+    
+    // Reset user activity timestamp
+    lastActivityRef.current = Date.now();
   };
 
   const handleSubmit = () => {
@@ -251,12 +346,21 @@ const ExamSession = () => {
       clearInterval(timerRef.current);
     }
     
+    // Stop inactivity timer
+    if (inactivityTimerRef.current) {
+      clearInterval(inactivityTimerRef.current);
+    }
+    
     // Prepare results data
     const results = {
       examId,
       answers,
       timeSpent: exam.duration * 60 - timeLeft,
       submittedAt: new Date().toISOString(),
+      antiCheatingEvents: {
+        tabSwitches: tabSwitchCountRef.current,
+        screenLeaves: mouseLeavesScreenCountRef.current
+      }
     };
     
     // In a real app, you would send this to the server
@@ -268,13 +372,16 @@ const ExamSession = () => {
 
   const goToQuestion = (index: number) => {
     setCurrentQuestionIndex(index);
+    
+    // Reset user activity timestamp
+    lastActivityRef.current = Date.now();
   };
 
   if (!exam) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="text-center">
-          <div className="animate-spin h-10 w-10 border-4 border-wl-blue border-t-transparent rounded-full inline-block mb-4"></div>
+          <div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full inline-block mb-4"></div>
           <p className="text-gray-600">Loading exam...</p>
         </div>
       </div>
@@ -310,16 +417,46 @@ const ExamSession = () => {
             </div>
             
             <div className="bg-amber-50 border border-amber-200 rounded-md p-3">
-              <h3 className="font-medium text-amber-800">Important:</h3>
+              <h3 className="font-medium text-amber-800 flex items-center gap-2">
+                <AlertTriangle size={16} />
+                Important:
+              </h3>
               <p className="text-sm text-amber-700 mt-1">
-                Please do not switch tabs or use external help. Your exam will auto-submit if tab focus is lost repeatedly.
+                Please do not switch tabs, use search engines, or leave the exam window. Our anti-cheating system will detect these actions and may automatically submit your exam.
               </p>
             </div>
           </div>
           
           <DialogFooter>
-            <Button type="button" onClick={handleStartExam} size="lg">
+            <Button type="button" onClick={handleStartExam} size="lg" className="btn-shine">
               Start Exam
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Focus Warning Dialog */}
+      <Dialog open={showFocusWarning} onOpenChange={setShowFocusWarning}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-amber-600 flex items-center gap-2">
+              <AlertTriangle size={18} />
+              Stay Focused
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <p className="text-gray-700">
+              You have left the exam tab. Please stay on this tab during your exam.
+            </p>
+            <p className="mt-2 text-sm text-gray-600">
+              Repeated switching between tabs may result in automatic submission of your exam.
+            </p>
+          </div>
+          
+          <DialogFooter>
+            <Button onClick={() => setShowFocusWarning(false)}>
+              I Understand
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -412,7 +549,8 @@ const ExamSession = () => {
       <Dialog open={showTimeWarning} onOpenChange={setShowTimeWarning}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-amber-600">
+            <DialogTitle className="text-amber-600 flex items-center gap-2">
+              <Clock size={18} />
               2 Minutes Left!
             </DialogTitle>
             <DialogDescription>
@@ -452,9 +590,7 @@ const ExamSession = () => {
             timeWarningActive ? 'bg-amber-100 text-amber-800' : 
             'bg-blue-50 text-blue-800'
           }`}>
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+            <Clock className="w-5 h-5 mr-2" />
             <span className="font-medium">{formatTime(timeLeft)}</span>
           </div>
         </div>
@@ -475,7 +611,8 @@ const ExamSession = () => {
                     checked={flaggedQuestions[currentQuestion.id]}
                     onCheckedChange={() => handleFlag(currentQuestion.id)}
                   />
-                  <Label htmlFor="flagQuestion" className="text-sm cursor-pointer">
+                  <Label htmlFor="flagQuestion" className="text-sm cursor-pointer flex items-center gap-1">
+                    <Flag size={14} className={flaggedQuestions[currentQuestion.id] ? "text-amber-500" : "text-gray-400"} />
                     Flag for review
                   </Label>
                 </div>
@@ -541,7 +678,7 @@ const ExamSession = () => {
                 </Button>
                 
                 {currentQuestionIndex === exam.questions.length - 1 ? (
-                  <Button onClick={handleSubmitClick}>
+                  <Button onClick={handleSubmitClick} className="bg-primary hover:bg-primary/90">
                     Submit Exam
                   </Button>
                 ) : (
@@ -567,22 +704,31 @@ const ExamSession = () => {
               <div className="mb-6">
                 <h3 className="font-medium text-gray-700 mb-2">Questions</h3>
                 <div className="grid grid-cols-5 gap-2">
-                  {exam.questions.map((_: any, index: number) => (
-                    <Button
-                      key={index}
-                      variant="outline"
-                      size="sm"
-                      className={`p-0 w-10 h-10 flex items-center justify-center ${
-                        index === currentQuestionIndex ? 'bg-primary text-primary-foreground' :
-                        answers[exam.questions[index].id] ? 'bg-green-50 border-green-200 text-green-800' :
-                        flaggedQuestions[exam.questions[index].id] ? 'bg-amber-50 border-amber-200 text-amber-800' :
-                        ''
-                      }`}
-                      onClick={() => goToQuestion(index)}
-                    >
-                      {index + 1}
-                    </Button>
-                  ))}
+                  {exam.questions.map((_: any, index: number) => {
+                    const questionId = exam.questions[index].id;
+                    const isAnswered = !!answers[questionId];
+                    const isFlagged = !!flaggedQuestions[questionId];
+                    const isCurrentQuestion = index === currentQuestionIndex;
+                    
+                    return (
+                      <Button
+                        key={index}
+                        variant="outline"
+                        size="sm"
+                        className={`p-0 w-10 h-10 flex items-center justify-center relative
+                          ${isCurrentQuestion ? 'bg-primary text-primary-foreground border-primary' :
+                          isAnswered ? 'bg-green-50 border-green-200 text-green-800' :
+                          isFlagged ? 'bg-amber-50 border-amber-200 text-amber-800' : ''}`
+                        }
+                        onClick={() => goToQuestion(index)}
+                      >
+                        {index + 1}
+                        {isFlagged && !isCurrentQuestion && (
+                          <div className="absolute -top-1 -right-1 w-3 h-3 bg-amber-500 rounded-full"></div>
+                        )}
+                      </Button>
+                    );
+                  })}
                 </div>
               </div>
               

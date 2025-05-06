@@ -2,12 +2,22 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, ChevronDown } from 'lucide-react';
+import { Menu, X, ChevronDown, LogOut, User } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
+  const { user, isAuthenticated, logout } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -20,6 +30,12 @@ const Navigation = () => {
 
   const isActive = (path: string) => {
     return location.pathname === path ? 'text-primary font-bold' : 'text-foreground hover:text-primary transition-colors duration-200';
+  };
+
+  const handleLogout = () => {
+    logout();
+    // Close mobile menu if open
+    setIsMenuOpen(false);
   };
 
   return (
@@ -64,12 +80,49 @@ const Navigation = () => {
         </nav>
 
         <div className="hidden md:flex items-center space-x-4">
-          <Link to="/login">
-            <Button variant="outline" className="rounded-full px-6 hover:bg-primary/5">Log In</Button>
-          </Link>
-          <Link to="/signup">
-            <Button className="rounded-full px-6 shadow-lg hover:shadow-primary/20 btn-shine">Sign Up Free</Button>
-          </Link>
+          {isAuthenticated ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="rounded-full px-4 flex items-center gap-2 hover:bg-primary/5">
+                  <User size={16} />
+                  {user?.name || 'Account'}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  <Link to="/profile" className="w-full">Profile</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Link to="/dashboard" className="w-full">Dashboard</Link>
+                </DropdownMenuItem>
+                {user?.isSubscribed ? (
+                  <DropdownMenuItem>
+                    <Link to="/subscription" className="w-full">Manage Subscription</Link>
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem>
+                    <Link to="/pricing" className="w-full">Upgrade to Premium</Link>
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="text-red-500 cursor-pointer">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <>
+              <Link to="/login">
+                <Button variant="outline" className="rounded-full px-6 hover:bg-primary/5">Log In</Button>
+              </Link>
+              <Link to="/signup">
+                <Button className="rounded-full px-6 shadow-lg hover:shadow-primary/20 btn-shine">Sign Up Free</Button>
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Mobile menu button */}
@@ -145,14 +198,37 @@ const Navigation = () => {
             >
               Contact
             </Link>
-            <div className="pt-2 grid grid-cols-2 gap-3">
-              <Link to="/login" className="block w-full" onClick={() => setIsMenuOpen(false)}>
-                <Button variant="outline" className="w-full rounded-full">Log In</Button>
-              </Link>
-              <Link to="/signup" className="block w-full" onClick={() => setIsMenuOpen(false)}>
-                <Button className="w-full rounded-full btn-shine">Sign Up Free</Button>
-              </Link>
-            </div>
+            
+            {isAuthenticated ? (
+              <>
+                <div className="border-t border-gray-200 pt-3 mt-2">
+                  <div className="px-2 py-1">
+                    <p className="text-sm text-gray-500">Signed in as <span className="font-medium">{user?.email}</span></p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 mt-2">
+                    <Link to="/dashboard" className="block w-full" onClick={() => setIsMenuOpen(false)}>
+                      <Button variant="outline" className="w-full rounded-full">Dashboard</Button>
+                    </Link>
+                    <Button 
+                      variant="destructive" 
+                      className="w-full rounded-full" 
+                      onClick={handleLogout}
+                    >
+                      Log Out
+                    </Button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="pt-2 grid grid-cols-2 gap-3">
+                <Link to="/login" className="block w-full" onClick={() => setIsMenuOpen(false)}>
+                  <Button variant="outline" className="w-full rounded-full">Log In</Button>
+                </Link>
+                <Link to="/signup" className="block w-full" onClick={() => setIsMenuOpen(false)}>
+                  <Button className="w-full rounded-full btn-shine">Sign Up Free</Button>
+                </Link>
+              </div>
+            )}
           </nav>
         </div>
       )}

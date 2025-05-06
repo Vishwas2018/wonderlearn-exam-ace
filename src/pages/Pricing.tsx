@@ -5,8 +5,22 @@ import Footer from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { Check, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 const Pricing = () => {
+  const { isAuthenticated, user, updateUserSubscription } = useAuth();
+
+  const handleSubscribe = (plan: string) => {
+    if (!isAuthenticated) {
+      toast.error("Please login first to subscribe");
+      return;
+    }
+
+    toast.success(`Successfully subscribed to ${plan} plan!`);
+    updateUserSubscription(true);
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       <Navigation />
@@ -52,9 +66,15 @@ const Pricing = () => {
                       <span>Answer explanations</span>
                     </li>
                   </ul>
-                  <Link to="/signup" className="block mt-6">
-                    <Button variant="outline" className="w-full rounded-full">Get Started</Button>
-                  </Link>
+                  {isAuthenticated && user?.isSubscribed ? (
+                    <Button variant="outline" className="w-full rounded-full mt-6" disabled>
+                      Current Plan
+                    </Button>
+                  ) : (
+                    <Button variant="outline" className="w-full rounded-full mt-6" onClick={() => handleSubscribe('Basic')}>
+                      {isAuthenticated ? 'Subscribe' : <Link to="/signup" className="w-full">Get Started</Link>}
+                    </Button>
+                  )}
                 </div>
               </div>
               
@@ -96,9 +116,15 @@ const Pricing = () => {
                       <span>Priority email support</span>
                     </li>
                   </ul>
-                  <Link to="/signup" className="block mt-6">
-                    <Button className="w-full rounded-full btn-shine">Get Started</Button>
-                  </Link>
+                  {isAuthenticated && user?.isSubscribed ? (
+                    <Button className="w-full rounded-full mt-6 btn-shine" disabled>
+                      Current Plan
+                    </Button>
+                  ) : (
+                    <Button className="w-full rounded-full mt-6 btn-shine" onClick={() => handleSubscribe('Premium')}>
+                      {isAuthenticated ? 'Subscribe' : <Link to="/signup" className="w-full">Get Started</Link>}
+                    </Button>
+                  )}
                 </div>
               </div>
               
@@ -178,16 +204,35 @@ const Pricing = () => {
         {/* CTA Section */}
         <section className="py-12 bg-gradient-to-r from-primary/10 to-secondary/10">
           <div className="container text-center">
-            <h2 className="text-2xl md:text-3xl font-bold mb-4">Ready to elevate your child's learning?</h2>
+            <h2 className="text-2xl md:text-3xl font-bold mb-4">
+              {isAuthenticated && user?.isSubscribed 
+                ? "You're all set with premium access!" 
+                : "Ready to elevate your child's learning?"}
+            </h2>
             <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
-              Join thousands of students already experiencing improved test scores and academic confidence.
+              {isAuthenticated && user?.isSubscribed 
+                ? "Enjoy unlimited access to all our premium exams and features." 
+                : "Join thousands of students already experiencing improved test scores and academic confidence."}
             </p>
-            <Link to="/signup">
-              <Button size="lg" className="rounded-full px-8 btn-shine">
-                <Sparkles size={20} className="mr-2" />
-                Start Your Free Trial
-              </Button>
-            </Link>
+            {isAuthenticated && user?.isSubscribed ? (
+              <Link to="/exams">
+                <Button size="lg" className="rounded-full px-8 btn-shine">
+                  <Sparkles size={20} className="mr-2" />
+                  Start Practicing Now
+                </Button>
+              </Link>
+            ) : (
+              <Link to={isAuthenticated ? "#" : "/signup"}>
+                <Button 
+                  size="lg" 
+                  className="rounded-full px-8 btn-shine"
+                  onClick={isAuthenticated ? () => handleSubscribe('Premium') : undefined}
+                >
+                  <Sparkles size={20} className="mr-2" />
+                  {isAuthenticated ? "Upgrade Now" : "Start Your Free Trial"}
+                </Button>
+              </Link>
+            )}
           </div>
         </section>
       </main>

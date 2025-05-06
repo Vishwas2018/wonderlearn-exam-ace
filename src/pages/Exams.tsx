@@ -6,8 +6,9 @@ import Footer from '@/components/layout/Footer';
 import { toast } from 'sonner';
 import exams from '@/data/exams';
 import studyTips from '@/data/studyTips';
+import { useAuth } from '@/contexts/AuthContext';
 
-// Import the new components
+// Import the components
 import ExamFilters from '@/components/exams/ExamFilters';
 import ExamList from '@/components/exams/ExamList';
 import StudyTips from '@/components/exams/StudyTips';
@@ -15,13 +16,13 @@ import SubscriptionCard from '@/components/exams/SubscriptionCard';
 
 const Exams = () => {
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
   const [filters, setFilters] = useState({
     examType: '',
     yearLevel: '',
     subject: '',
   });
   const [filteredExams, setFilteredExams] = useState(exams);
-  const [isSubscribed, setIsSubscribed] = useState(false); // Mock subscription status
 
   // Filter exams based on selected filters
   useEffect(() => {
@@ -43,7 +44,12 @@ const Exams = () => {
   }, [filters]);
 
   const handleStartExam = (exam) => {
-    if (!exam.isFree && !isSubscribed) {
+    if (!exam.isFree && (!isAuthenticated || !user?.isSubscribed)) {
+      if (!isAuthenticated) {
+        toast.error("Please log in to access premium exams.");
+        setTimeout(() => navigate('/login'), 1500);
+        return;
+      }
       toast.error("This is a premium exam. Please subscribe to access all exams.");
       return;
     }
@@ -77,7 +83,7 @@ const Exams = () => {
                 {/* Exam List Component */}
                 <ExamList 
                   exams={filteredExams} 
-                  isSubscribed={isSubscribed} 
+                  isSubscribed={user?.isSubscribed || false} 
                   onStartExam={handleStartExam} 
                 />
               </div>
@@ -94,7 +100,7 @@ const Exams = () => {
               )}
               
               {/* Subscription Card Component */}
-              {!isSubscribed && (
+              {(!isAuthenticated || !user?.isSubscribed) && (
                 <SubscriptionCard onSubscribe={handleSubscribe} />
               )}
             </div>

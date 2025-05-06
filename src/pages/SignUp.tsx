@@ -5,64 +5,44 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Navigation from '@/components/layout/Navigation';
 import Footer from '@/components/layout/Footer';
 import { toast } from 'sonner';
-
-const yearLevels = [
-  { value: "2", label: "Year 2" },
-  { value: "3", label: "Year 3" },
-  { value: "4", label: "Year 4" },
-  { value: "5", label: "Year 5" },
-  { value: "6", label: "Year 6" },
-  { value: "7", label: "Year 7" },
-  { value: "8", label: "Year 8" },
-  { value: "9", label: "Year 9" },
-];
+import { useAuth } from '@/contexts/AuthContext';
 
 const SignUp = () => {
   const navigate = useNavigate();
+  const { login, isLoading } = useAuth();
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
+    name: '',
     email: '',
     password: '',
-    yearLevel: '',
-    school: '',
-    agreeTerms: false,
+    confirmPassword: '',
+    acceptTerms: false,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
-    // Clear error when user starts typing
     if (errors[name]) {
       setErrors({ ...errors, [name]: '' });
     }
   };
 
-  const handleYearLevelChange = (value: string) => {
-    setFormData({ ...formData, yearLevel: value });
-    if (errors.yearLevel) {
-      setErrors({ ...errors, yearLevel: '' });
-    }
-  };
-
   const handleCheckboxChange = (checked: boolean) => {
-    setFormData({ ...formData, agreeTerms: checked });
-    if (errors.agreeTerms) {
-      setErrors({ ...errors, agreeTerms: '' });
+    setFormData({ ...formData, acceptTerms: checked });
+    if (errors.acceptTerms) {
+      setErrors({ ...errors, acceptTerms: '' });
     }
   };
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
     
-    if (!formData.firstName.trim()) newErrors.firstName = 'First name is required';
-    if (!formData.lastName.trim()) newErrors.lastName = 'Last name is required';
+    if (!formData.name.trim()) {
+      newErrors.name = 'Name is required';
+    }
     
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
@@ -76,13 +56,18 @@ const SignUp = () => {
       newErrors.password = 'Password must be at least 6 characters';
     }
     
-    if (!formData.yearLevel) newErrors.yearLevel = 'Year level selection is required';
-    if (!formData.agreeTerms) newErrors.agreeTerms = 'You must agree to the terms and conditions';
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+    
+    if (!formData.acceptTerms) {
+      newErrors.acceptTerms = 'You must accept the terms and conditions';
+    }
     
     return newErrors;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     const validationErrors = validate();
@@ -91,36 +76,36 @@ const SignUp = () => {
       return;
     }
     
-    setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      // In a real app, this would create a new user first, then log them in
+      await login(formData.email, formData.password);
       toast.success("Account created successfully!");
       navigate('/exams');
-    }, 1500);
+    } catch (error) {
+      toast.error("Failed to create account");
+    }
   };
 
-  const handleGoogleSignUp = () => {
-    setIsLoading(true);
-    
-    // Simulate OAuth
-    setTimeout(() => {
-      setIsLoading(false);
+  const handleGoogleSignUp = async () => {
+    try {
+      // This would be replaced with actual Google OAuth
+      await login("google.user@example.com", "google-oauth");
       toast.success("Signed up with Google successfully!");
       navigate('/exams');
-    }, 1500);
+    } catch (error) {
+      toast.error("Google sign up failed");
+    }
   };
 
-  const handleMicrosoftSignUp = () => {
-    setIsLoading(true);
-    
-    // Simulate OAuth
-    setTimeout(() => {
-      setIsLoading(false);
+  const handleMicrosoftSignUp = async () => {
+    try {
+      // This would be replaced with actual Microsoft OAuth
+      await login("microsoft.user@example.com", "microsoft-oauth");
       toast.success("Signed up with Microsoft successfully!");
       navigate('/exams');
-    }, 1500);
+    } catch (error) {
+      toast.error("Microsoft sign up failed");
+    }
   };
 
   return (
@@ -130,8 +115,8 @@ const SignUp = () => {
       <div className="flex-grow flex items-center justify-center bg-gray-50 py-12">
         <div className="w-full max-w-md p-8 bg-white rounded-xl shadow-lg">
           <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold">Create Your WonderLearn Account</h1>
-            <p className="text-gray-600 mt-2">Join thousands of students excelling in their exams</p>
+            <h1 className="text-2xl font-bold">Create Your Account</h1>
+            <p className="text-gray-600 mt-2">Join us and start your learning journey</p>
           </div>
           
           <div className="space-y-4 mb-6">
@@ -176,30 +161,17 @@ const SignUp = () => {
           </div>
           
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">First Name</Label>
-                <Input
-                  id="firstName"
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  className={errors.firstName ? "border-red-500" : ""}
-                />
-                {errors.firstName && <p className="text-xs text-red-500">{errors.firstName}</p>}
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name</Label>
-                <Input
-                  id="lastName"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  className={errors.lastName ? "border-red-500" : ""}
-                />
-                {errors.lastName && <p className="text-xs text-red-500">{errors.lastName}</p>}
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                name="name"
+                type="text"
+                value={formData.name}
+                onChange={handleChange}
+                className={errors.name ? "border-red-500" : ""}
+              />
+              {errors.name && <p className="text-xs text-red-500">{errors.name}</p>}
             </div>
             
             <div className="space-y-2">
@@ -229,65 +201,46 @@ const SignUp = () => {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="yearLevel">Year Level</Label>
-              <Select value={formData.yearLevel} onValueChange={handleYearLevelChange}>
-                <SelectTrigger className={errors.yearLevel ? "border-red-500" : ""}>
-                  <SelectValue placeholder="Select your year level" />
-                </SelectTrigger>
-                <SelectContent>
-                  {yearLevels.map((year) => (
-                    <SelectItem key={year.value} value={year.value}>
-                      {year.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.yearLevel && <p className="text-xs text-red-500">{errors.yearLevel}</p>}
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="school">School Name (Optional)</Label>
+              <Label htmlFor="confirmPassword">Confirm Password</Label>
               <Input
-                id="school"
-                name="school"
-                value={formData.school}
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                value={formData.confirmPassword}
                 onChange={handleChange}
+                className={errors.confirmPassword ? "border-red-500" : ""}
               />
+              {errors.confirmPassword && <p className="text-xs text-red-500">{errors.confirmPassword}</p>}
             </div>
             
-            <div className="flex items-start space-x-2 pt-2">
+            <div className="flex items-center space-x-2">
               <Checkbox 
-                id="terms" 
-                checked={formData.agreeTerms}
+                id="acceptTerms" 
+                checked={formData.acceptTerms}
                 onCheckedChange={handleCheckboxChange}
-                className={errors.agreeTerms ? "border-red-500" : ""}
+                className={errors.acceptTerms ? "border-red-500" : ""}
               />
-              <div className="grid gap-1.5 leading-none">
-                <label
-                  htmlFor="terms"
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  I agree to the{' '}
-                  <Link to="/terms" className="text-wl-blue hover:underline">
-                    Terms & Conditions
-                  </Link>
-                </label>
-                {errors.agreeTerms && <p className="text-xs text-red-500">{errors.agreeTerms}</p>}
-              </div>
+              <label
+                htmlFor="acceptTerms"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                I accept the <Link to="/terms" className="text-primary hover:underline">Terms of Service</Link> and <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>
+              </label>
             </div>
+            {errors.acceptTerms && <p className="text-xs text-red-500">{errors.acceptTerms}</p>}
             
             <Button 
               type="submit" 
               className="w-full py-6 text-lg"
               disabled={isLoading}
             >
-              {isLoading ? 'Creating Account...' : 'Create Account'}
+              {isLoading ? 'Creating account...' : 'Sign Up'}
             </Button>
             
             <p className="text-center text-sm text-gray-600 mt-4">
               Already have an account?{' '}
-              <Link to="/login" className="text-wl-blue hover:underline">
-                Log In
+              <Link to="/login" className="text-primary hover:underline">
+                Log in
               </Link>
             </p>
           </form>
