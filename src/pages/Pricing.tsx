@@ -16,8 +16,8 @@ const Pricing = () => {
         <section className="py-16 md:py-24 relative overflow-hidden">
           <div className="absolute inset-0 animated-gradient-bg"></div>
           <div className="container relative z-10">
-            <h1 className="text-4xl md:text-5xl font-bold text-center mb-4 slide-in" style={{ '--delay': 0 }}>Simple, Transparent Pricing</h1>
-            <p className="text-xl text-gray-700 text-center max-w-3xl mx-auto slide-in" style={{ '--delay': 1 }}>
+            <h1 className="text-4xl md:text-5xl font-bold text-center mb-4 slide-in" data-delay="0">Simple, Transparent Pricing</h1>
+            <p className="text-xl text-gray-700 text-center max-w-3xl mx-auto slide-in" data-delay="1">
               Choose the plan that's right for your student's learning journey.
             </p>
           </div>
@@ -28,7 +28,7 @@ const Pricing = () => {
           <div className="container">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {/* Basic plan */}
-              <div className="card-glow hover-scale slide-in" style={{ '--delay': 2 }}>
+              <div className="card-glow hover-scale slide-in" data-delay="2">
                 <div className="bg-gradient-to-br from-blue-50 to-white p-6 rounded-t-2xl">
                   <h3 className="text-xl font-bold">Basic</h3>
                   <p className="mt-2 text-gray-600">Perfect for casual practice</p>
@@ -59,7 +59,7 @@ const Pricing = () => {
               </div>
               
               {/* Premium plan (highlighted) */}
-              <div className="relative card-glow hover-scale slide-in z-10" style={{ '--delay': 3 }}>
+              <div className="relative card-glow hover-scale slide-in z-10" data-delay="3">
                 <div className="absolute -top-4 left-0 right-0 flex justify-center">
                   <span className="bg-gradient-to-r from-primary to-accent text-white text-xs font-bold px-4 py-1 rounded-full shadow-lg">
                     MOST POPULAR
@@ -103,7 +103,7 @@ const Pricing = () => {
               </div>
               
               {/* School plan */}
-              <div className="card-glow hover-scale slide-in" style={{ '--delay': 4 }}>
+              <div className="card-glow hover-scale slide-in" data-delay="4">
                 <div className="bg-gradient-to-br from-purple-50 to-white p-6 rounded-t-2xl">
                   <h3 className="text-xl font-bold">School</h3>
                   <p className="mt-2 text-gray-600">For educational institutions</p>
@@ -151,23 +151,23 @@ const Pricing = () => {
             <h2 className="text-3xl font-bold mb-8 text-center">Frequently Asked Questions</h2>
             
             <div className="space-y-6">
-              <div className="card-glow p-6 hover-scale slide-in" style={{ '--delay': 5 }}>
+              <div className="card-glow p-6 hover-scale slide-in" data-delay="5">
                 <h3 className="text-xl font-semibold mb-2">Can I cancel my subscription at any time?</h3>
                 <p className="text-gray-600">Yes, you can cancel your subscription at any time. If you cancel, you'll have access until the end of your current billing period.</p>
               </div>
               
-              <div className="card-glow p-6 hover-scale slide-in" style={{ '--delay': 6 }}>
+              <div className="card-glow p-6 hover-scale slide-in" data-delay="6">
                 <h3 className="text-xl font-semibold mb-2">Is there a free trial available?</h3>
                 <p className="text-gray-600">Yes, we offer a 7-day free trial for new users to try out our platform before committing to a subscription.</p>
               </div>
               
-              <div className="card-glow p-6 hover-scale slide-in" style={{ '--delay': 7 }}>
+              <div className="card-glow p-6 hover-scale slide-in" data-delay="7">
                 <h3 className="text-xl font-semibold mb-2">Do you offer family discounts?</h3>
                 <p className="text-gray-600">Yes, we offer a 15% discount for families with multiple children. Contact our support team to set this up.</p>
               </div>
             </div>
             
-            <div className="mt-10 text-center slide-in" style={{ '--delay': 8 }}>
+            <div className="mt-10 text-center slide-in" data-delay="8">
               <Link to="/faq">
                 <Button variant="link" className="text-primary hover:text-primary/80">View All FAQs</Button>
               </Link>
