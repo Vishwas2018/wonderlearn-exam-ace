@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -113,6 +112,7 @@ const ExamSession = () => {
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
   const [showTimeWarning, setShowTimeWarning] = useState(false);
   const [showFocusWarning, setShowFocusWarning] = useState(false);
+  const [examStarted, setExamStarted] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const warningShownRef = useRef(false);
   const finalWarningShownRef = useRef(false);
@@ -140,7 +140,7 @@ const ExamSession = () => {
 
   // Handle timer
   useEffect(() => {
-    if (!showStartDialog && timeLeft > 0) {
+    if (examStarted && timeLeft > 0) {
       timerRef.current = setInterval(() => {
         setTimeLeft((prev) => {
           const newTime = prev - 1;
@@ -172,12 +172,12 @@ const ExamSession = () => {
         if (timerRef.current) clearInterval(timerRef.current);
       };
     }
-  }, [showStartDialog]);
+  }, [examStarted]);
   
   // Enhanced anti-cheating: Tab visibility change detection
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden' && !showStartDialog && timeLeft > 0) {
+      if (document.visibilityState === 'hidden' && examStarted && timeLeft > 0) {
         tabSwitchCountRef.current += 1;
         
         if (tabSwitchCountRef.current === 1) {
@@ -198,12 +198,12 @@ const ExamSession = () => {
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [showStartDialog, timeLeft]);
+  }, [examStarted, timeLeft]);
 
   // Enhanced anti-cheating: Mouse leave detection
   useEffect(() => {
     const handleMouseLeave = (e: MouseEvent) => {
-      if (!showStartDialog && timeLeft > 0) {
+      if (examStarted && timeLeft > 0) {
         // Check if mouse leaves the browser window
         if (e.clientY <= 0 || e.clientX <= 0 || e.clientX >= window.innerWidth || e.clientY >= window.innerHeight) {
           mouseLeavesScreenCountRef.current += 1;
@@ -224,7 +224,7 @@ const ExamSession = () => {
     return () => {
       document.removeEventListener('mouseleave', handleMouseLeave);
     };
-  }, [showStartDialog, timeLeft]);
+  }, [examStarted, timeLeft]);
 
   // Enhanced anti-cheating: Inactivity detection
   useEffect(() => {
@@ -233,7 +233,7 @@ const ExamSession = () => {
     };
     
     const checkInactivity = () => {
-      if (!showStartDialog && timeLeft > 0) {
+      if (examStarted && timeLeft > 0) {
         const inactiveTime = Date.now() - lastActivityRef.current;
         // If inactive for more than 2 minutes
         if (inactiveTime > 2 * 60 * 1000) {
@@ -257,7 +257,7 @@ const ExamSession = () => {
       });
       if (inactivityTimerRef.current) clearInterval(inactivityTimerRef.current);
     };
-  }, [showStartDialog, timeLeft]);
+  }, [examStarted, timeLeft]);
 
   const handleTimeUp = () => {
     toast.error("Time's up! Your exam is being submitted.", {
@@ -276,12 +276,22 @@ const ExamSession = () => {
     // Verify premium access if needed
     const currentExam = exam;
     if (!currentExam.isFree && (!isAuthenticated || !user?.isSubscribed)) {
+      if (!isAuthenticated) {
+        toast.error("Please log in to access premium exams.");
+        setTimeout(() => navigate('/login'), 1500);
+        return;
+      }
       toast.error("This is a premium exam. Please subscribe to access all premium exams.");
       navigate('/pricing');
       return;
     }
     
     setShowStartDialog(false);
+    setExamStarted(true);
+  };
+
+  const handleCancelExam = () => {
+    navigate('/exams');
   };
 
   const handleAnswer = (questionId: string, answer: string | boolean) => {
@@ -396,7 +406,12 @@ const ExamSession = () => {
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Start Dialog */}
-      <Dialog open={showStartDialog} onOpenChange={setShowStartDialog}>
+      <Dialog open={showStartDialog} onOpenChange={(isOpen) => {
+        if (!isOpen && !examStarted) {
+          navigate('/exams');
+        }
+        setShowStartDialog(isOpen);
+      }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Ready to Begin Your Exam</DialogTitle>
@@ -427,7 +442,10 @@ const ExamSession = () => {
             </div>
           </div>
           
-          <DialogFooter>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button type="button" variant="outline" onClick={handleCancelExam}>
+              Cancel
+            </Button>
             <Button type="button" onClick={handleStartExam} size="lg" className="btn-shine">
               Start Exam
             </Button>
@@ -435,315 +453,320 @@ const ExamSession = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Focus Warning Dialog */}
-      <Dialog open={showFocusWarning} onOpenChange={setShowFocusWarning}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-amber-600 flex items-center gap-2">
-              <AlertTriangle size={18} />
-              Stay Focused
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="py-4">
-            <p className="text-gray-700">
-              You have left the exam tab. Please stay on this tab during your exam.
-            </p>
-            <p className="mt-2 text-sm text-gray-600">
-              Repeated switching between tabs may result in automatic submission of your exam.
-            </p>
-          </div>
-          
-          <DialogFooter>
-            <Button onClick={() => setShowFocusWarning(false)}>
-              I Understand
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Submit Confirmation Dialog */}
-      <Dialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Are you sure you want to submit?</DialogTitle>
-            <DialogDescription>
-              You have unanswered or flagged questions in your exam.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            {exam.questions.some((q: any) => !answers[q.id]) && (
-              <div>
-                <h3 className="font-medium text-red-600">Unanswered Questions:</h3>
-                <ul className="list-decimal pl-5 text-sm space-y-1 mt-2">
-                  {exam.questions.map((q: any, i: number) => (
-                    !answers[q.id] && (
-                      <li key={q.id} className="text-gray-600">
-                        Question {i + 1}
-                        <Button 
-                          variant="link" 
-                          size="sm"
-                          className="ml-2 p-0 h-auto text-xs text-blue-600"
-                          onClick={() => {
-                            setShowSubmitDialog(false);
-                            goToQuestion(i);
-                          }}
-                        >
-                          Go to question
-                        </Button>
-                      </li>
-                    )
-                  ))}
-                </ul>
-              </div>
-            )}
-            
-            {Object.keys(flaggedQuestions).length > 0 && (
-              <div>
-                <h3 className="font-medium text-amber-600">Flagged Questions:</h3>
-                <ul className="list-decimal pl-5 text-sm space-y-1 mt-2">
-                  {Object.keys(flaggedQuestions).map((qId) => {
-                    if (!flaggedQuestions[qId]) return null;
-                    const index = exam.questions.findIndex((q: any) => q.id === qId);
-                    return (
-                      <li key={qId} className="text-gray-600">
-                        Question {index + 1}
-                        <Button 
-                          variant="link" 
-                          size="sm"
-                          className="ml-2 p-0 h-auto text-xs text-blue-600"
-                          onClick={() => {
-                            setShowSubmitDialog(false);
-                            goToQuestion(index);
-                          }}
-                        >
-                          Go to question
-                        </Button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            )}
-          </div>
-          
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowSubmitDialog(false)}
-            >
-              Review Questions
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleSubmit}
-            >
-              Submit Anyway
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Time Warning Dialog */}
-      <Dialog open={showTimeWarning} onOpenChange={setShowTimeWarning}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-amber-600 flex items-center gap-2">
-              <Clock size={18} />
-              2 Minutes Left!
-            </DialogTitle>
-            <DialogDescription>
-              You have only 2 minutes remaining to complete your exam.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="py-2">
-            <p className="text-sm text-gray-600">
-              Please review your answers and submit soon. Your exam will be automatically submitted when time runs out.
-            </p>
-          </div>
-          
-          <DialogFooter>
-            <Button
-              onClick={() => setShowTimeWarning(false)}
-            >
-              Continue Exam
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Main Exam Interface */}
-      <div className="container py-6">
-        {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm p-4 mb-6 flex flex-col md:flex-row justify-between items-center">
-          <div>
-            <h1 className="text-xl font-bold">{exam.title}</h1>
-            <p className="text-gray-600">
-              {exam.subject} • Year {exam.yearLevel} • {exam.type}
-            </p>
-          </div>
-          
-          <div className={`flex items-center mt-4 md:mt-0 px-4 py-2 rounded-full ${
-            criticalTimeWarning ? 'bg-red-100 text-red-800 animate-pulse' : 
-            timeWarningActive ? 'bg-amber-100 text-amber-800' : 
-            'bg-blue-50 text-blue-800'
-          }`}>
-            <Clock className="w-5 h-5 mr-2" />
-            <span className="font-medium">{formatTime(timeLeft)}</span>
-          </div>
-        </div>
-        
-        {/* Main Content */}
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* Question Area */}
-          <div className="lg:w-3/4">
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <div className="mb-6 flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-500">
-                  Question {currentQuestionIndex + 1} of {exam.questions.length}
-                </span>
-                
-                <div className="flex items-center gap-2">
-                  <Checkbox 
-                    id="flagQuestion"
-                    checked={flaggedQuestions[currentQuestion.id]}
-                    onCheckedChange={() => handleFlag(currentQuestion.id)}
-                  />
-                  <Label htmlFor="flagQuestion" className="text-sm cursor-pointer flex items-center gap-1">
-                    <Flag size={14} className={flaggedQuestions[currentQuestion.id] ? "text-amber-500" : "text-gray-400"} />
-                    Flag for review
-                  </Label>
-                </div>
+      {/* Actual Exam Content - Only show when exam is started */}
+      {examStarted && (
+        <>
+          {/* Focus Warning Dialog */}
+          <Dialog open={showFocusWarning} onOpenChange={setShowFocusWarning}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle className="text-amber-600 flex items-center gap-2">
+                  <AlertTriangle size={18} />
+                  Stay Focused
+                </DialogTitle>
+              </DialogHeader>
+              
+              <div className="py-4">
+                <p className="text-gray-700">
+                  You have left the exam tab. Please stay on this tab during your exam.
+                </p>
+                <p className="mt-2 text-sm text-gray-600">
+                  Repeated switching between tabs may result in automatic submission of your exam.
+                </p>
               </div>
               
-              <div className="mb-8">
-                <h2 className="text-lg font-medium mb-4">{currentQuestion.text}</h2>
-                
-                {currentQuestion.type === 'multiple-choice' && (
-                  <RadioGroup 
-                    value={answers[currentQuestion.id] as string || ''} 
-                    onValueChange={(value) => handleAnswer(currentQuestion.id, value)}
-                    className="space-y-3"
-                  >
-                    {currentQuestion.options.map((option: any) => (
-                      <div key={option.id} className="flex items-center space-x-2">
-                        <RadioGroupItem value={option.id} id={`option-${option.id}`} />
-                        <Label htmlFor={`option-${option.id}`} className="text-base">
-                          {option.text}
-                        </Label>
-                      </div>
-                    ))}
-                  </RadioGroup>
+              <DialogFooter>
+                <Button onClick={() => setShowFocusWarning(false)}>
+                  I Understand
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          
+          {/* Submit Confirmation Dialog */}
+          <Dialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Are you sure you want to submit?</DialogTitle>
+                <DialogDescription>
+                  You have unanswered or flagged questions in your exam.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="space-y-4 py-4">
+                {exam.questions.some((q: any) => !answers[q.id]) && (
+                  <div>
+                    <h3 className="font-medium text-red-600">Unanswered Questions:</h3>
+                    <ul className="list-decimal pl-5 text-sm space-y-1 mt-2">
+                      {exam.questions.map((q: any, i: number) => (
+                        !answers[q.id] && (
+                          <li key={q.id} className="text-gray-600">
+                            Question {i + 1}
+                            <Button 
+                              variant="link" 
+                              size="sm"
+                              className="ml-2 p-0 h-auto text-xs text-blue-600"
+                              onClick={() => {
+                                setShowSubmitDialog(false);
+                                goToQuestion(i);
+                              }}
+                            >
+                              Go to question
+                            </Button>
+                          </li>
+                        )
+                      ))}
+                    </ul>
+                  </div>
                 )}
                 
-                {currentQuestion.type === 'true-false' && (
-                  <RadioGroup 
-                    value={answers[currentQuestion.id] === true ? 'true' : answers[currentQuestion.id] === false ? 'false' : ''} 
-                    onValueChange={(value) => handleAnswer(currentQuestion.id, value === 'true')}
-                    className="space-y-3"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="true" id="true" />
-                      <Label htmlFor="true" className="text-base">True</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="false" id="false" />
-                      <Label htmlFor="false" className="text-base">False</Label>
-                    </div>
-                  </RadioGroup>
-                )}
-                
-                {currentQuestion.type === 'short-answer' && (
-                  <div className="space-y-2">
-                    <Input
-                      type="text"
-                      value={answers[currentQuestion.id] as string || ''}
-                      onChange={(e) => handleAnswer(currentQuestion.id, e.target.value)}
-                      placeholder="Type your answer here"
-                      className="max-w-md"
-                    />
+                {Object.keys(flaggedQuestions).length > 0 && (
+                  <div>
+                    <h3 className="font-medium text-amber-600">Flagged Questions:</h3>
+                    <ul className="list-decimal pl-5 text-sm space-y-1 mt-2">
+                      {Object.keys(flaggedQuestions).map((qId) => {
+                        if (!flaggedQuestions[qId]) return null;
+                        const index = exam.questions.findIndex((q: any) => q.id === qId);
+                        return (
+                          <li key={qId} className="text-gray-600">
+                            Question {index + 1}
+                            <Button 
+                              variant="link" 
+                              size="sm"
+                              className="ml-2 p-0 h-auto text-xs text-blue-600"
+                              onClick={() => {
+                                setShowSubmitDialog(false);
+                                goToQuestion(index);
+                              }}
+                            >
+                              Go to question
+                            </Button>
+                          </li>
+                        );
+                      })}
+                    </ul>
                   </div>
                 )}
               </div>
               
-              <div className="flex justify-between">
-                <Button 
+              <DialogFooter>
+                <Button
                   variant="outline"
-                  onClick={handlePrevious}
-                  disabled={currentQuestionIndex === 0}
+                  onClick={() => setShowSubmitDialog(false)}
                 >
-                  Previous
+                  Review Questions
                 </Button>
-                
-                {currentQuestionIndex === exam.questions.length - 1 ? (
-                  <Button onClick={handleSubmitClick} className="bg-primary hover:bg-primary/90">
-                    Submit Exam
-                  </Button>
-                ) : (
-                  <Button onClick={handleNext}>
-                    Next
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
+                <Button
+                  variant="destructive"
+                  onClick={handleSubmit}
+                >
+                  Submit Anyway
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
           
-          {/* Sidebar - Question Navigation */}
-          <div className="lg:w-1/4">
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <div className="mb-4">
-                <h3 className="font-medium text-gray-700 mb-2">Progress</h3>
-                <Progress value={progressPercentage} className="h-2" />
-                <p className="text-sm text-gray-600 mt-2">
-                  {Object.keys(answers).length} of {exam.questions.length} questions answered
+          {/* Time Warning Dialog */}
+          <Dialog open={showTimeWarning} onOpenChange={setShowTimeWarning}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle className="text-amber-600 flex items-center gap-2">
+                  <Clock size={18} />
+                  2 Minutes Left!
+                </DialogTitle>
+                <DialogDescription>
+                  You have only 2 minutes remaining to complete your exam.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="py-2">
+                <p className="text-sm text-gray-600">
+                  Please review your answers and submit soon. Your exam will be automatically submitted when time runs out.
                 </p>
               </div>
               
-              <div className="mb-6">
-                <h3 className="font-medium text-gray-700 mb-2">Questions</h3>
-                <div className="grid grid-cols-5 gap-2">
-                  {exam.questions.map((_: any, index: number) => {
-                    const questionId = exam.questions[index].id;
-                    const isAnswered = !!answers[questionId];
-                    const isFlagged = !!flaggedQuestions[questionId];
-                    const isCurrentQuestion = index === currentQuestionIndex;
+              <DialogFooter>
+                <Button
+                  onClick={() => setShowTimeWarning(false)}
+                >
+                  Continue Exam
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          
+          {/* Main Exam Interface */}
+          <div className="container py-6">
+            {/* Header */}
+            <div className="bg-white rounded-lg shadow-sm p-4 mb-6 flex flex-col md:flex-row justify-between items-center">
+              <div>
+                <h1 className="text-xl font-bold">{exam.title}</h1>
+                <p className="text-gray-600">
+                  {exam.subject} • Year {exam.yearLevel} • {exam.type}
+                </p>
+              </div>
+              
+              <div className={`flex items-center mt-4 md:mt-0 px-4 py-2 rounded-full ${
+                criticalTimeWarning ? 'bg-red-100 text-red-800 animate-pulse' : 
+                timeWarningActive ? 'bg-amber-100 text-amber-800' : 
+                'bg-blue-50 text-blue-800'
+              }`}>
+                <Clock className="w-5 h-5 mr-2" />
+                <span className="font-medium">{formatTime(timeLeft)}</span>
+              </div>
+            </div>
+            
+            {/* Main Content */}
+            <div className="flex flex-col lg:flex-row gap-6">
+              {/* Question Area */}
+              <div className="lg:w-3/4">
+                <div className="bg-white rounded-lg shadow-sm p-6">
+                  <div className="mb-6 flex justify-between items-center">
+                    <span className="text-sm font-medium text-gray-500">
+                      Question {currentQuestionIndex + 1} of {exam.questions.length}
+                    </span>
                     
-                    return (
-                      <Button
-                        key={index}
-                        variant="outline"
-                        size="sm"
-                        className={`p-0 w-10 h-10 flex items-center justify-center relative
-                          ${isCurrentQuestion ? 'bg-primary text-primary-foreground border-primary' :
-                          isAnswered ? 'bg-green-50 border-green-200 text-green-800' :
-                          isFlagged ? 'bg-amber-50 border-amber-200 text-amber-800' : ''}`
-                        }
-                        onClick={() => goToQuestion(index)}
+                    <div className="flex items-center gap-2">
+                      <Checkbox 
+                        id="flagQuestion"
+                        checked={flaggedQuestions[currentQuestion.id]}
+                        onCheckedChange={() => handleFlag(currentQuestion.id)}
+                      />
+                      <Label htmlFor="flagQuestion" className="text-sm cursor-pointer flex items-center gap-1">
+                        <Flag size={14} className={flaggedQuestions[currentQuestion.id] ? "text-amber-500" : "text-gray-400"} />
+                        Flag for review
+                      </Label>
+                    </div>
+                  </div>
+                  
+                  <div className="mb-8">
+                    <h2 className="text-lg font-medium mb-4">{currentQuestion.text}</h2>
+                    
+                    {currentQuestion.type === 'multiple-choice' && (
+                      <RadioGroup 
+                        value={answers[currentQuestion.id] as string || ''} 
+                        onValueChange={(value) => handleAnswer(currentQuestion.id, value)}
+                        className="space-y-3"
                       >
-                        {index + 1}
-                        {isFlagged && !isCurrentQuestion && (
-                          <div className="absolute -top-1 -right-1 w-3 h-3 bg-amber-500 rounded-full"></div>
-                        )}
+                        {currentQuestion.options.map((option: any) => (
+                          <div key={option.id} className="flex items-center space-x-2">
+                            <RadioGroupItem value={option.id} id={`option-${option.id}`} />
+                            <Label htmlFor={`option-${option.id}`} className="text-base">
+                              {option.text}
+                            </Label>
+                          </div>
+                        ))}
+                      </RadioGroup>
+                    )}
+                    
+                    {currentQuestion.type === 'true-false' && (
+                      <RadioGroup 
+                        value={answers[currentQuestion.id] === true ? 'true' : answers[currentQuestion.id] === false ? 'false' : ''} 
+                        onValueChange={(value) => handleAnswer(currentQuestion.id, value === 'true')}
+                        className="space-y-3"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="true" id="true" />
+                          <Label htmlFor="true" className="text-base">True</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="false" id="false" />
+                          <Label htmlFor="false" className="text-base">False</Label>
+                        </div>
+                      </RadioGroup>
+                    )}
+                    
+                    {currentQuestion.type === 'short-answer' && (
+                      <div className="space-y-2">
+                        <Input
+                          type="text"
+                          value={answers[currentQuestion.id] as string || ''}
+                          onChange={(e) => handleAnswer(currentQuestion.id, e.target.value)}
+                          placeholder="Type your answer here"
+                          className="max-w-md"
+                        />
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex justify-between">
+                    <Button 
+                      variant="outline"
+                      onClick={handlePrevious}
+                      disabled={currentQuestionIndex === 0}
+                    >
+                      Previous
+                    </Button>
+                    
+                    {currentQuestionIndex === exam.questions.length - 1 ? (
+                      <Button onClick={handleSubmitClick} className="bg-primary hover:bg-primary/90">
+                        Submit Exam
                       </Button>
-                    );
-                  })}
+                    ) : (
+                      <Button onClick={handleNext}>
+                        Next
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
               
-              <div className="pt-4 border-t border-gray-200">
-                <Button 
-                  onClick={handleSubmitClick}
-                  className="w-full"
-                >
-                  Submit Exam
-                </Button>
+              {/* Sidebar - Question Navigation */}
+              <div className="lg:w-1/4">
+                <div className="bg-white rounded-lg shadow-sm p-6">
+                  <div className="mb-4">
+                    <h3 className="font-medium text-gray-700 mb-2">Progress</h3>
+                    <Progress value={progressPercentage} className="h-2" />
+                    <p className="text-sm text-gray-600 mt-2">
+                      {Object.keys(answers).length} of {exam.questions.length} questions answered
+                    </p>
+                  </div>
+                  
+                  <div className="mb-6">
+                    <h3 className="font-medium text-gray-700 mb-2">Questions</h3>
+                    <div className="grid grid-cols-5 gap-2">
+                      {exam.questions.map((_: any, index: number) => {
+                        const questionId = exam.questions[index].id;
+                        const isAnswered = !!answers[questionId];
+                        const isFlagged = !!flaggedQuestions[questionId];
+                        const isCurrentQuestion = index === currentQuestionIndex;
+                        
+                        return (
+                          <Button
+                            key={index}
+                            variant="outline"
+                            size="sm"
+                            className={`p-0 w-10 h-10 flex items-center justify-center relative
+                              ${isCurrentQuestion ? 'bg-primary text-primary-foreground border-primary' :
+                              isAnswered ? 'bg-green-50 border-green-200 text-green-800' :
+                              isFlagged ? 'bg-amber-50 border-amber-200 text-amber-800' : ''}`
+                            }
+                            onClick={() => goToQuestion(index)}
+                          >
+                            {index + 1}
+                            {isFlagged && !isCurrentQuestion && (
+                              <div className="absolute -top-1 -right-1 w-3 h-3 bg-amber-500 rounded-full"></div>
+                            )}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  
+                  <div className="pt-4 border-t border-gray-200">
+                    <Button 
+                      onClick={handleSubmitClick}
+                      className="w-full"
+                    >
+                      Submit Exam
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
 };
