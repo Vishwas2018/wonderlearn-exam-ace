@@ -52,7 +52,7 @@ const ExamCard: React.FC<ExamCardProps> = ({ exam, isSubscribed, onStartExam }) 
       <CardFooter className="pt-0 pb-4 px-6">
         <Button 
           className="w-full"
-          variant={exam.isFree || isSubscribed ? "default" : "outline"}
+          variant={exam.isFree ? "default" : (isSubscribed ? "default" : "outline")}
           onClick={() => onStartExam(exam)}
         >
           {exam.isFree ? (

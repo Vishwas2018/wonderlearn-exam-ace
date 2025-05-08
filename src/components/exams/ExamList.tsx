@@ -3,7 +3,17 @@ import React from 'react';
 import ExamCard from './ExamCard';
 
 interface ExamListProps {
-  exams: Array<any>;
+  exams: Array<{
+    id: string;
+    title: string;
+    subject: string;
+    yearLevel: string;
+    type: string;
+    description: string;
+    questions?: Array<any>;
+    duration: number;
+    isFree: boolean;
+  }>;
   isSubscribed: boolean;
   onStartExam: (exam: any) => void;
 }

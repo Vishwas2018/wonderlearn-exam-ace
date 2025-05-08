@@ -44,12 +44,21 @@ const Exams = () => {
   }, [filters]);
 
   const handleStartExam = (exam) => {
-    if (!exam.isFree && (!isAuthenticated || !user?.isSubscribed)) {
-      if (!isAuthenticated) {
-        toast.error("Please log in to access premium exams.");
-        setTimeout(() => navigate('/login'), 1500);
-        return;
-      }
+    // Allow free exams to be accessed without login
+    if (exam.isFree) {
+      navigate(`/exam/${exam.id}`);
+      return;
+    }
+    
+    // For premium exams, require authentication and subscription
+    if (!isAuthenticated) {
+      toast.error("Please log in to access premium exams.");
+      setTimeout(() => navigate('/login'), 1500);
+      return;
+    }
+    
+    // If user is authenticated but not subscribed
+    if (!user?.isSubscribed) {
       toast.error("This is a premium exam. Please subscribe to access all exams.");
       return;
     }
