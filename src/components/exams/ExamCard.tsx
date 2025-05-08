@@ -21,6 +21,32 @@ interface ExamCardProps {
 }
 
 const ExamCard: React.FC<ExamCardProps> = ({ exam, isSubscribed, onStartExam }) => {
+  // Helper function to determine button text and icon based on exam status
+  const getButtonContent = () => {
+    if (exam.isFree === true) {
+      return (
+        <>
+          <BookOpen size={16} className="mr-2" />
+          Start Free Exam
+        </>
+      );
+    } else if (isSubscribed) {
+      return (
+        <>
+          <BookOpen size={16} className="mr-2" />
+          Start Exam
+        </>
+      );
+    } else {
+      return (
+        <>
+          <Lock size={16} className="mr-2" />
+          Premium Exam
+        </>
+      );
+    }
+  };
+
   return (
     <Card 
       className="overflow-hidden hover:shadow-md transition-all duration-300 hover:scale-[1.02]"
@@ -52,25 +78,10 @@ const ExamCard: React.FC<ExamCardProps> = ({ exam, isSubscribed, onStartExam }) 
       <CardFooter className="pt-0 pb-4 px-6">
         <Button 
           className="w-full"
-          variant={exam.isFree ? "default" : (isSubscribed ? "default" : "outline")}
+          variant={exam.isFree === true ? "default" : (isSubscribed ? "default" : "outline")}
           onClick={() => onStartExam(exam)}
         >
-          {exam.isFree ? (
-            <>
-              <BookOpen size={16} className="mr-2" />
-              Start Free Exam
-            </>
-          ) : isSubscribed ? (
-            <>
-              <BookOpen size={16} className="mr-2" />
-              Start Exam
-            </>
-          ) : (
-            <>
-              <Lock size={16} className="mr-2" />
-              Premium Exam
-            </>
-          )}
+          {getButtonContent()}
         </Button>
       </CardFooter>
     </Card>
