@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import exams from '@/data/exams';
 import studyTips from '@/data/studyTips';
 import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
 
 // Import the components
 import ExamFilters from '@/components/exams/ExamFilters';
@@ -84,7 +85,18 @@ const Exams = () => {
             {/* Main Content */}
             <div className="md:w-3/4">
               <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
-                <h1 className="text-2xl font-bold mb-6">Practice Exams</h1>
+                <div className="flex justify-between items-center mb-6">
+                  <h1 className="text-2xl font-bold">Practice Exams</h1>
+                  {isAuthenticated && user?.isAdmin && (
+                    <Button 
+                      variant="outline" 
+                      onClick={() => navigate('/admin/exam-manager')}
+                      className="text-sm"
+                    >
+                      Manage Exams
+                    </Button>
+                  )}
+                </div>
                 
                 {/* Filters Component */}
                 <ExamFilters 

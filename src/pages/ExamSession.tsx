@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
-import { Flag, Clock, AlertTriangle, X } from 'lucide-react';
+import { Flag, Clock, AlertTriangle, X, Timer } from 'lucide-react';
 
 // Mock exam data - this would come from an API in a real app
 const getMockExam = (examId: string) => {
@@ -108,14 +108,19 @@ const ExamSession = () => {
   const [answers, setAnswers] = useState<Answer>({});
   const [flaggedQuestions, setFlaggedQuestions] = useState<FlaggedQuestion>({});
   const [timeLeft, setTimeLeft] = useState(0);
+  const [totalTime, setTotalTime] = useState(0);
   const [showStartDialog, setShowStartDialog] = useState(true);
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
   const [showTimeWarning, setShowTimeWarning] = useState(false);
+  const [timeWarningMessage, setTimeWarningMessage] = useState('');
   const [showFocusWarning, setShowFocusWarning] = useState(false);
   const [examStarted, setExamStarted] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const warningShownRef = useRef(false);
-  const finalWarningShownRef = useRef(false);
+  const warningShownRef = useRef({
+    fiveMin: false,
+    twoMin: false,
+    oneMin: false
+  });
   const tabSwitchCountRef = useRef(0);
   const mouseLeavesScreenCountRef = useRef(0);
   const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -134,7 +139,9 @@ const ExamSession = () => {
     if (examId) {
       const examData = getMockExam(examId);
       setExam(examData);
-      setTimeLeft(examData.duration * 60); // Convert minutes to seconds
+      const durationInSeconds = examData.duration * 60;
+      setTimeLeft(durationInSeconds);
+      setTotalTime(durationInSeconds);
     }
   }, [examId]);
 
@@ -145,16 +152,23 @@ const ExamSession = () => {
         setTimeLeft((prev) => {
           const newTime = prev - 1;
           
+          // Show 5 minute warning
+          if (newTime === 300 && !warningShownRef.current.fiveMin) {
+            toast.warning("5 minutes remaining!", { duration: 5000 });
+            warningShownRef.current.fiveMin = true;
+          }
+          
           // Show 2 minute warning
-          if (newTime === 120 && !warningShownRef.current) {
+          if (newTime === 120 && !warningShownRef.current.twoMin) {
+            setTimeWarningMessage('2 Minutes Left!');
             setShowTimeWarning(true);
-            warningShownRef.current = true;
+            warningShownRef.current.twoMin = true;
           }
           
           // Show 1 minute warning (blinking)
-          if (newTime === 60 && !finalWarningShownRef.current) {
+          if (newTime === 60 && !warningShownRef.current.oneMin) {
             toast.warning("1 minute remaining!", { duration: 5000 });
-            finalWarningShownRef.current = true;
+            warningShownRef.current.oneMin = true;
           }
           
           // Time's up
@@ -270,6 +284,11 @@ const ExamSession = () => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const calculateTimeProgress = () => {
+    if (totalTime === 0) return 100;
+    return (timeLeft / totalTime) * 100;
   };
 
   const handleStartExam = () => {
@@ -400,7 +419,7 @@ const ExamSession = () => {
 
   const currentQuestion = exam.questions[currentQuestionIndex];
   const progressPercentage = (Object.keys(answers).length / exam.questions.length) * 100;
-  const timeWarningActive = timeLeft <= 120;
+  const timeWarningActive = timeLeft <= 300;
   const criticalTimeWarning = timeLeft <= 60;
 
   return (
@@ -453,148 +472,148 @@ const ExamSession = () => {
         </DialogContent>
       </Dialog>
       
+      {/* Focus Warning Dialog */}
+      <Dialog open={showFocusWarning} onOpenChange={setShowFocusWarning}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-amber-600 flex items-center gap-2">
+              <AlertTriangle size={18} />
+              Stay Focused
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <p className="text-gray-700">
+              You have left the exam tab. Please stay on this tab during your exam.
+            </p>
+            <p className="mt-2 text-sm text-gray-600">
+              Repeated switching between tabs may result in automatic submission of your exam.
+            </p>
+          </div>
+          
+          <DialogFooter>
+            <Button onClick={() => setShowFocusWarning(false)}>
+              I Understand
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Submit Confirmation Dialog */}
+      <Dialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Are you sure you want to submit?</DialogTitle>
+            <DialogDescription>
+              You have unanswered or flagged questions in your exam.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {exam.questions.some((q: any) => !answers[q.id]) && (
+              <div>
+                <h3 className="font-medium text-red-600">Unanswered Questions:</h3>
+                <ul className="list-decimal pl-5 text-sm space-y-1 mt-2">
+                  {exam.questions.map((q: any, i: number) => (
+                    !answers[q.id] && (
+                      <li key={q.id} className="text-gray-600">
+                        Question {i + 1}
+                        <Button 
+                          variant="link" 
+                          size="sm"
+                          className="ml-2 p-0 h-auto text-xs text-blue-600"
+                          onClick={() => {
+                            setShowSubmitDialog(false);
+                            goToQuestion(i);
+                          }}
+                        >
+                          Go to question
+                        </Button>
+                      </li>
+                    )
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+            {Object.keys(flaggedQuestions).length > 0 && (
+              <div>
+                <h3 className="font-medium text-amber-600">Flagged Questions:</h3>
+                <ul className="list-decimal pl-5 text-sm space-y-1 mt-2">
+                  {Object.keys(flaggedQuestions).map((qId) => {
+                    if (!flaggedQuestions[qId]) return null;
+                    const index = exam.questions.findIndex((q: any) => q.id === qId);
+                    return (
+                      <li key={qId} className="text-gray-600">
+                        Question {index + 1}
+                        <Button 
+                          variant="link" 
+                          size="sm"
+                          className="ml-2 p-0 h-auto text-xs text-blue-600"
+                          onClick={() => {
+                            setShowSubmitDialog(false);
+                            goToQuestion(index);
+                          }}
+                        >
+                          Go to question
+                        </Button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowSubmitDialog(false)}
+            >
+              Review Questions
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleSubmit}
+            >
+              Submit Anyway
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Time Warning Dialog */}
+      <Dialog open={showTimeWarning} onOpenChange={setShowTimeWarning}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-amber-600 flex items-center gap-2">
+              <Clock size={18} />
+              {timeWarningMessage}
+            </DialogTitle>
+            <DialogDescription>
+              You have only {timeWarningMessage && timeWarningMessage.toLowerCase()} remaining to complete your exam.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-2">
+            <p className="text-sm text-gray-600">
+              Please review your answers and submit soon. Your exam will be automatically submitted when time runs out.
+            </p>
+          </div>
+          
+          <DialogFooter>
+            <Button
+              onClick={() => setShowTimeWarning(false)}
+            >
+              Continue Exam
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
       {/* Actual Exam Content - Only show when exam is started */}
       {examStarted && (
         <>
-          {/* Focus Warning Dialog */}
-          <Dialog open={showFocusWarning} onOpenChange={setShowFocusWarning}>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle className="text-amber-600 flex items-center gap-2">
-                  <AlertTriangle size={18} />
-                  Stay Focused
-                </DialogTitle>
-              </DialogHeader>
-              
-              <div className="py-4">
-                <p className="text-gray-700">
-                  You have left the exam tab. Please stay on this tab during your exam.
-                </p>
-                <p className="mt-2 text-sm text-gray-600">
-                  Repeated switching between tabs may result in automatic submission of your exam.
-                </p>
-              </div>
-              
-              <DialogFooter>
-                <Button onClick={() => setShowFocusWarning(false)}>
-                  I Understand
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-          
-          {/* Submit Confirmation Dialog */}
-          <Dialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Are you sure you want to submit?</DialogTitle>
-                <DialogDescription>
-                  You have unanswered or flagged questions in your exam.
-                </DialogDescription>
-              </DialogHeader>
-              
-              <div className="space-y-4 py-4">
-                {exam.questions.some((q: any) => !answers[q.id]) && (
-                  <div>
-                    <h3 className="font-medium text-red-600">Unanswered Questions:</h3>
-                    <ul className="list-decimal pl-5 text-sm space-y-1 mt-2">
-                      {exam.questions.map((q: any, i: number) => (
-                        !answers[q.id] && (
-                          <li key={q.id} className="text-gray-600">
-                            Question {i + 1}
-                            <Button 
-                              variant="link" 
-                              size="sm"
-                              className="ml-2 p-0 h-auto text-xs text-blue-600"
-                              onClick={() => {
-                                setShowSubmitDialog(false);
-                                goToQuestion(i);
-                              }}
-                            >
-                              Go to question
-                            </Button>
-                          </li>
-                        )
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                
-                {Object.keys(flaggedQuestions).length > 0 && (
-                  <div>
-                    <h3 className="font-medium text-amber-600">Flagged Questions:</h3>
-                    <ul className="list-decimal pl-5 text-sm space-y-1 mt-2">
-                      {Object.keys(flaggedQuestions).map((qId) => {
-                        if (!flaggedQuestions[qId]) return null;
-                        const index = exam.questions.findIndex((q: any) => q.id === qId);
-                        return (
-                          <li key={qId} className="text-gray-600">
-                            Question {index + 1}
-                            <Button 
-                              variant="link" 
-                              size="sm"
-                              className="ml-2 p-0 h-auto text-xs text-blue-600"
-                              onClick={() => {
-                                setShowSubmitDialog(false);
-                                goToQuestion(index);
-                              }}
-                            >
-                              Go to question
-                            </Button>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                )}
-              </div>
-              
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => setShowSubmitDialog(false)}
-                >
-                  Review Questions
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={handleSubmit}
-                >
-                  Submit Anyway
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-          
-          {/* Time Warning Dialog */}
-          <Dialog open={showTimeWarning} onOpenChange={setShowTimeWarning}>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle className="text-amber-600 flex items-center gap-2">
-                  <Clock size={18} />
-                  2 Minutes Left!
-                </DialogTitle>
-                <DialogDescription>
-                  You have only 2 minutes remaining to complete your exam.
-                </DialogDescription>
-              </DialogHeader>
-              
-              <div className="py-2">
-                <p className="text-sm text-gray-600">
-                  Please review your answers and submit soon. Your exam will be automatically submitted when time runs out.
-                </p>
-              </div>
-              
-              <DialogFooter>
-                <Button
-                  onClick={() => setShowTimeWarning(false)}
-                >
-                  Continue Exam
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-          
           {/* Main Exam Interface */}
           <div className="container py-6">
             {/* Header */}
@@ -606,13 +625,28 @@ const ExamSession = () => {
                 </p>
               </div>
               
-              <div className={`flex items-center mt-4 md:mt-0 px-4 py-2 rounded-full ${
-                criticalTimeWarning ? 'bg-red-100 text-red-800 animate-pulse' : 
-                timeWarningActive ? 'bg-amber-100 text-amber-800' : 
-                'bg-blue-50 text-blue-800'
-              }`}>
-                <Clock className="w-5 h-5 mr-2" />
-                <span className="font-medium">{formatTime(timeLeft)}</span>
+              <div className="flex flex-col items-center w-full md:w-auto mt-4 md:mt-0">
+                {/* Timer with progress bar */}
+                <div className={`flex items-center px-4 py-2 rounded-full w-full md:w-auto ${
+                  criticalTimeWarning ? 'bg-red-100 text-red-800 animate-pulse' : 
+                  timeWarningActive ? 'bg-amber-100 text-amber-800' : 
+                  'bg-blue-50 text-blue-800'
+                }`}>
+                  <Timer className="w-5 h-5 mr-2" />
+                  <span className="font-medium">{formatTime(timeLeft)}</span>
+                </div>
+                
+                {/* Time progress bar */}
+                <div className="mt-2 w-full max-w-[200px]">
+                  <Progress 
+                    value={calculateTimeProgress()} 
+                    className={`h-1.5 ${
+                      criticalTimeWarning ? 'bg-red-200' : 
+                      timeWarningActive ? 'bg-amber-200' : 
+                      'bg-blue-200'
+                    }`} 
+                  />
+                </div>
               </div>
             </div>
             
