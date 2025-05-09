@@ -85,7 +85,7 @@ const Navigation = () => {
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="rounded-full px-4 flex items-center gap-2 hover:bg-primary/5">
                   <User size={16} />
-                  {user?.name || 'Account'}
+                  {user?.username || 'Account'}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
@@ -97,6 +97,11 @@ const Navigation = () => {
                 <DropdownMenuItem>
                   <Link to="/dashboard" className="w-full">Dashboard</Link>
                 </DropdownMenuItem>
+                {user?.isAdmin && (
+                  <DropdownMenuItem>
+                    <Link to="/admin/exam-manager" className="w-full">Exam Manager</Link>
+                  </DropdownMenuItem>
+                )}
                 {user?.isSubscribed ? (
                   <DropdownMenuItem>
                     <Link to="/subscription" className="w-full">Manage Subscription</Link>
