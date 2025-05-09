@@ -1,12 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-
-type User = {
-  id: string;
-  email: string;
-  name?: string;
-  isSubscribed: boolean;
-};
+import { User } from '../types/user';
 
 interface AuthContextType {
   user: User | null;
@@ -49,8 +43,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const mockUser: User = {
         id: Math.random().toString(36).substring(2, 9),
         email,
-        name: email.split('@')[0],
+        username: email.split('@')[0],
         isSubscribed: false,
+        isAdmin: false,
+        createdAt: new Date().toISOString(),
       };
       
       // Store in localStorage

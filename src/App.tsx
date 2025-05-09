@@ -12,6 +12,7 @@ import Login from "./pages/Login";
 import Exams from "./pages/Exams";
 import ExamSession from "./pages/ExamSession";
 import ExamResults from "./pages/ExamResults";
+import ExamManager from "./pages/admin/ExamManager";
 
 // New page imports
 import About from "./pages/About";
@@ -41,6 +42,7 @@ const App = () => (
             <Route path="/exams" element={<Exams />} />
             <Route path="/exam/:examId" element={<ExamSession />} />
             <Route path="/results/:examId" element={<ExamResults />} />
+            <Route path="/admin/exam-manager" element={<ExamManager />} />
             
             {/* New page routes */}
             <Route path="/about" element={<About />} />

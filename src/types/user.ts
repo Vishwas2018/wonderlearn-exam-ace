@@ -4,7 +4,7 @@ export interface User {
   username: string;
   email: string;
   isSubscribed: boolean;
-  isAdmin?: boolean;
+  isAdmin: boolean;  // Changed from optional to required
   avatarUrl?: string;
   createdAt: string;
 }
