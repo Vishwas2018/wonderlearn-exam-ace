@@ -47,14 +47,14 @@ const Exams = () => {
   const handleStartExam = (exam) => {
     console.log("Starting exam:", exam.id, "Free:", exam.isFree);
     
-    // Allow free exams to be accessed without login - fix the boolean check
-    if (exam.isFree) {
+    // Allow free exams to be accessed without login
+    if (exam.isFree === true) {
       console.log("Free exam detected, navigating directly");
       navigate(`/exam/${exam.id}`);
       return;
     }
     
-    // For premium exams, require authentication
+    // At this point, the exam is premium, so we check authentication
     if (!isAuthenticated) {
       toast.error("Please log in to access premium exams.");
       setTimeout(() => navigate('/login'), 1500);
