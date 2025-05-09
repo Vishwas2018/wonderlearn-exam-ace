@@ -47,8 +47,8 @@ const Exams = () => {
   const handleStartExam = (exam) => {
     console.log("Starting exam:", exam.id, "Free:", exam.isFree);
     
-    // Allow free exams to be accessed without login
-    if (exam.isFree === true) {
+    // Allow free exams to be accessed without login - fix the boolean check
+    if (exam.isFree) {
       console.log("Free exam detected, navigating directly");
       navigate(`/exam/${exam.id}`);
       return;
